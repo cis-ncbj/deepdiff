@@ -46,6 +46,10 @@ number_format_notation : string, default="f"
 number_to_string_func : function, default=None
     This is an advanced feature to give the user the full control into overriding how numbers are converted to strings for comparison. The default function is defined in https://github.com/seperman/deepdiff/blob/master/deepdiff/helper.py and is called number_to_string. You can define your own function to do that.
 
+key_extractor(item, index, significant_digits): function, attempts to transform lists into dicts
+    when defined it is run on all items in an iterable. If all the extracted keys are not None and
+    different, the iterator will be considered as a dict.
+
 verbose_level: int >= 0, default = 1
     Higher verbose level shows you more details.
     For example verbose level 1 shows what dictionary item are added or removed.

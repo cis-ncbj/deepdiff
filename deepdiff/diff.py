@@ -51,6 +51,7 @@ class DeepDiff(ResultDict, Base):
                  t2,
                  ignore_order=False,
                  report_repetition=False,
+                 key_extractor=None,
                  significant_digits=None,
                  number_format_notation="f",
                  exclude_paths=None,
@@ -82,6 +83,7 @@ class DeepDiff(ResultDict, Base):
             ignore_string_type_changes=ignore_string_type_changes,
             ignore_numeric_type_changes=ignore_numeric_type_changes,
             ignore_type_subclasses=ignore_type_subclasses)
+        self.key_extractor = key_extractor
         self.report_repetition = report_repetition
         self.exclude_paths = convert_item_or_items_into_set_else_none(exclude_paths)
         self.exclude_regex_paths = convert_item_or_items_into_compiled_regexes_else_none(exclude_regex_paths)
@@ -613,6 +615,17 @@ class DeepDiff(ResultDict, Base):
         level.report_type = 'type_changes'
         self.__report_result('type_changes', level)
 
+    def __create_dict(self, iterable):
+        keys = [
+            self.key_extractor(item,
+                               index=i,
+                               significant_digits=self.significant_digits)
+            for i, item in enumerate(iterable)
+        ]
+        if len({k for k in keys if k is not None}) != len(keys):
+            return
+        return dict(zip(keys, iterable))
+
     def __diff(self, level, parents_ids=frozenset({})):
         """The main diff method"""
         if level.t1 is level.t2:
@@ -650,6 +663,17 @@ class DeepDiff(ResultDict, Base):
             self.__diff_set(level)
 
         elif isinstance(level.t1, Iterable):
+            if self.key_extractor:
+                d1 = self.__create_dict(level.t1)
+                d2 = self.__create_dict(level.t2)
+
+                if d1 is not None and d2 is not None:
+                    self.__diff_dict(
+                        level, parents_ids,
+                        override=True, override_t1=d1, override_t2=d2
+                    )
+                    return
+
             if self.ignore_order:
                 self.__diff_iterable_with_deephash(level)
             else:
